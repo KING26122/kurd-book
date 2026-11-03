@@ -1,0 +1,355 @@
+// Kurd Book — Prisma schema (development: SQLite; production: switch to PostgreSQL)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String?   @unique
+  phone              String?   @unique
+  username           String    @unique
+  name               String
+  passwordHash       String
+  role               String    @default("USER") // USER | ADMIN
+  avatarUrl          String?
+  coverUrl           String?
+  bio                String?
+  city               String?
+  gender             String?
+  birthDate          DateTime?
+  emailVerifiedAt    DateTime?
+  phoneVerifiedAt    DateTime?
+  verificationStatus String    @default("NONE") // NONE | PENDING | VERIFIED | REJECTED
+  verifiedAt         DateTime?
+  isPro              Boolean   @default(false)
+  proExpiresAt       DateTime?
+  theme              String    @default("dark")
+  voiceEffect        String    @default("natural")
+  publicKey          String?
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecret    String?
+  totpConfirmedAt    DateTime?
+  disabled           Boolean   @default(false)
+  lastActiveAt       DateTime  @default(now())
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  posts                    Post[]
+  stories                  Story[]
+  comments                 Comment[]
+  likes                    PostLike[]
+  storyViews               StoryView[]
+  sessions                 Session[]
+  otps                     OtpCode[]
+  sentFriendRequests       Friendship[]          @relation("FriendRequester")
+  receivedFriendRequests   Friendship[]          @relation("FriendAddressee")
+  blocksMade               Block[]               @relation("Blocker")
+  blocksReceived           Block[]               @relation("Blocked")
+  conversations            ConversationMember[]
+  messages                 Message[]
+  notifications            Notification[]
+  verificationRequests     VerificationRequest[] @relation("VerificationOwner")
+  verificationsReviewed    VerificationRequest[] @relation("VerificationReviewer")
+  proRequests              ProRequest[]          @relation("ProOwner")
+  proRequestsReviewed      ProRequest[]          @relation("ProReviewer")
+  payments                 Payment[]
+  reportsMade              Report[]              @relation("ReportReporter")
+  reportsReviewed          Report[]              @relation("ReportReviewer")
+  liveRooms                LiveRoom[]
+  activityDays             ActivityDay[]
+
+  @@index([verificationStatus])
+  @@index([lastActiveAt])
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  identifier String
+  channel    String // email | phone
+  purpose    String // REGISTER | RESET | LOGIN
+  codeHash   String
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier, purpose])
+}
+
+model Post {
+  id           String     @id @default(cuid())
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content      String     @default("")
+  media        String     @default("[]") // JSON: [{url,type,width,height,name}]
+  visibility   String     @default("PUBLIC") // PUBLIC | FRIENDS
+  likeCount    Int        @default(0)
+  commentCount Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  likes        PostLike[]
+  comments     Comment[]
+
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model Story {
+  id        String      @id @default(cuid())
+  authorId  String
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mediaUrl  String
+  mediaType String // image | video
+  caption   String?
+  expiresAt DateTime
+  createdAt DateTime    @default(now())
+  views     StoryView[]
+
+  @@index([expiresAt])
+  @@index([authorId])
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewerId  String
+  viewer    User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([storyId, viewerId])
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User     @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+  @@index([requesterId, status])
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+model Conversation {
+  id            String               @id @default(cuid())
+  isGroup       Boolean              @default(false)
+  title         String?
+  avatarUrl     String?
+  createdAt     DateTime             @default(now())
+  lastMessageAt DateTime             @default(now())
+  members       ConversationMember[]
+  messages      Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationMember {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+  muted          Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  type           String       @default("TEXT") // TEXT | MEDIA | VOICE | STICKER | EMOJI
+  ciphertext     String
+  nonce          String
+  salt           String
+  protocol       Int          @default(1)
+  clientId       String?
+  createdAt      DateTime     @default(now())
+  deletedAt      DateTime?
+
+  @@unique([conversationId, clientId])
+  @@index([conversationId, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // FRIEND_REQUEST | FRIEND_ACCEPTED | LIKE | COMMENT | VERIFICATION | PRO | REPORT | SYSTEM
+  title     String
+  body      String
+  data      String   @default("{}")
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model VerificationRequest {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation("VerificationOwner", fields: [userId], references: [id], onDelete: Cascade)
+  frontUrl     String
+  backUrl      String
+  selfieUrl    String
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  note         String?
+  reviewedById String?
+  reviewedBy   User?     @relation("VerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+model ProRequest {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation("ProOwner", fields: [userId], references: [id], onDelete: Cascade)
+  plan         String // MONTHLY | YEARLY
+  provider     String // FIB | FASTPAY | QICARD | MANUAL
+  amount       Int
+  currency     String    @default("IQD")
+  receiptUrl   String?
+  reference    String?
+  note         String?
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED | PAID
+  reviewedById String?
+  reviewedBy   User?     @relation("ProReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+  payment      Payment?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+model Payment {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proRequest ProRequest @relation(fields: [proRequestId], references: [id], onDelete: Cascade)
+  proRequestId String    @unique
+  provider   String
+  providerRef String
+  plan       String
+  amount     Int
+  currency   String     @default("IQD")
+  status     String     @default("PENDING") // PENDING | PAID | FAILED | REFUNDED
+  raw        String     @default("{}")
+  createdAt  DateTime   @default(now())
+  paidAt     DateTime?
+
+  @@index([providerRef])
+  @@index([userId])
+}
+
+model Report {
+  id           String    @id @default(cuid())
+  reporterId   String
+  reporter     User      @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType   String // USER | MESSAGE | CONVERSATION | POST | STORY
+  targetId     String
+  reason       String
+  details      String?
+  evidence     String    @default("[]") // JSON array of consented plaintext excerpts
+  status       String    @default("OPEN") // OPEN | RESOLVED | DISMISSED
+  note         String?
+  reviewedById String?
+  reviewedBy   User?     @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status, createdAt])
+}
+
+model LiveRoom {
+  id        String    @id @default(cuid())
+  hostId    String
+  host      User      @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  roomName  String    @unique
+  title     String
+  isLive    Boolean   @default(true)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([isLive])
+}
+
+model ActivityDay {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day       String // YYYY-MM-DD (UTC)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day])
+  @@index([day])
+}

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1a2f"/>
+      <stop offset="1" stop-color="#07101d"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f9d976"/>
+      <stop offset=".52" stop-color="#e8b44a"/>
+      <stop offset="1" stop-color="#f08a3c"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#37e0b0"/>
+      <stop offset="1" stop-color="#0e9f86"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f25f5c"/>
+      <stop offset="1" stop-color="#c73e4a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="2"/>
+  <g opacity=".95">
+    <path d="M256 92v34M256 386v34M92 256h34M386 256h34M140 140l24 24M348 348l24 24M372 140l-24 24M164 348l-24 24" stroke="url(#sun)" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="256" cy="256" r="92" fill="none" stroke="url(#sun)" stroke-width="12"/>
+    <circle cx="256" cy="256" r="58" fill="url(#sun)" fill-opacity=".16" stroke="url(#sun)" stroke-width="6"/>
+  </g>
+  <path d="M152 280c0 58 46 104 104 104h70a34 34 0 0 0 34-34v-38a34 34 0 0 0-34-34h-48c-19 0-34-15-34-34v-4c0-19-15-34-34-34h-24a34 34 0 0 0-34 34v40z" fill="#0e1a2c" stroke="url(#leaf)" stroke-width="9"/>
+  <path d="M246 210c20-40 58-58 96-54-8 38-34 72-72 84" fill="url(#leaf)"/>
+  <path d="M244 214c18 4 36 2 52-6" stroke="#062a24" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <circle cx="198" cy="268" r="10" fill="url(#sun)"/>
+  <path d="M200 312c20 14 40 20 60 18" stroke="url(#red)" stroke-width="10" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,35 @@
+{
+  "name": "kurd-book",
+  "version": "1.0.0",
+  "private": true,
+  "description": "کورد بووک — تۆڕی کۆمەڵایەتی کوردستان",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web,admin -c cyan,magenta,yellow \"npm run dev -w @kurdbook/api\" \"npm run dev -w @kurdbook/web\" \"npm run dev -w @kurdbook/admin\"",
+    "dev:api": "npm run dev -w @kurdbook/api",
+    "dev:web": "npm run dev -w @kurdbook/web",
+    "dev:admin": "npm run dev -w @kurdbook/admin",
+    "dev:native": "cd mobile && flutter run -d android",
+    "build": "npm run build -w @kurdbook/api && npm run build -w @kurdbook/web && npm run build -w @kurdbook/admin",
+    "typecheck": "npm run typecheck -w @kurdbook/api && npm run typecheck -w @kurdbook/web && npm run typecheck -w @kurdbook/admin",
+    "db:push": "npm run db:push -w @kurdbook/api",
+    "db:seed": "npm run db:seed -w @kurdbook/api",
+    "setup": "npm install && npm run db:push && npm run db:seed",
+    "mobile:analyze": "cd mobile && flutter analyze",
+    "mobile:test": "cd mobile && flutter test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "prisma@6.19.3": true
+  }
+}
